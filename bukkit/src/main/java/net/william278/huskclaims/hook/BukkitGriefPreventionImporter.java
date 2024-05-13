@@ -24,9 +24,11 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.concurrent.ExecutionException;
 import lombok.AllArgsConstructor;
 import net.william278.huskclaims.BukkitHuskClaims;
 import net.william278.huskclaims.HuskClaims;
+import net.william278.huskclaims.api.BukkitHuskClaimsAPI;
 import net.william278.huskclaims.claim.Claim;
 import net.william278.huskclaims.claim.ClaimWorld;
 import net.william278.huskclaims.claim.Region;
@@ -169,7 +171,15 @@ public class BukkitGriefPreventionImporter extends Importer {
                         return x * z;
                     })
                     .sum();
-            user.claimBlocks = Math.max(0, user.claimBlocks - totalArea);
+
+            int storedClaimBlocks = 0;
+            // Pull Saved data on the user if we have it
+            if (plugin.getSavedUser(user.uuid).isPresent()) {
+                SavedUser savedUser = plugin.getSavedUser(user.uuid).get();
+                storedClaimBlocks = (int) savedUser.getClaimBlocks();
+            }
+
+            user.claimBlocks = storedClaimBlocks + Math.max(0, user.claimBlocks - totalArea);
 
             saveFutures.add(CompletableFuture.runAsync(
                     () -> {
